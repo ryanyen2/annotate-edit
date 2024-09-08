@@ -382,17 +382,17 @@ export class CodeEditorShapeUtil extends BaseBoxShapeUtil<CodeEditorShape> {
 
         useEffect(() => {
             if (codeMirrorRef.current) {
-                // const view = codeMirrorRef.current?.view
-                // console.log('shape.props.code', view?.contentHeight, shape.props.h);
-                // this.editor.updateShape<CodeEditorShape>({
-                //     id: shape.id,
-                //     type: 'code-editor-shape',
-                //     isLocked: false,
-                //     props: {
-                //         ...shape.props,
-                //         h: view?.contentHeight || shape.props.h,
-                //     }
-                // })
+                const view = codeMirrorRef.current?.view
+                console.log('shape.props.code', view?.contentHeight, shape.props.h);
+                this.editor.updateShape<CodeEditorShape>({
+                    id: shape.id,
+                    type: 'code-editor-shape',
+                    isLocked: false,
+                    props: {
+                        ...shape.props,
+                        // h: view?.contentHeight || shape.props.h,
+                    }
+                })
 
                 const codeMirrorView = codeMirrorRef.current?.view as EditorView
                 // const codeMirrorState = codeMirrorView?.state
@@ -408,8 +408,7 @@ export class CodeEditorShapeUtil extends BaseBoxShapeUtil<CodeEditorShape> {
                     const code = shape.props.code;
                     const prevCode = shape.props.prevCode;
                     if (code.length === prevCode.length + 1 && code.endsWith(' ') && code.slice(0, -1) === prevCode) {
-                        console.log('same')
-                        // undo(codeMirrorView); // This performs the undo operation
+                        undo(codeMirrorView); // This performs the undo operation
                     }
                 }
 
