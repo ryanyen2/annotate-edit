@@ -296,4 +296,178 @@ processed_df = processor.preprocess()
 print(processed_df)
 `,
     },
+    {
+        id: '4-1',
+        title: 'main.py',
+        description: 'main data handling',
+        starterCode: `from preprocessing import preprocess_financial_data
+import pandas as pd
+import yfinance as yf
+
+def main():
+    # Download sample financial data
+    tickers = ['AAPL', 'GOOGL', 'MSFT', 'AMZN']
+    start_date = '2020-01-01'
+    end_date = '2023-12-31'
+    
+    data = {}
+    for ticker in tickers:
+        data[ticker] = yf.download(ticker, start=start_date, end=end_date)
+    
+    # Additional economic indicators (you would typically get these from an API or database)
+    economic_data = pd.DataFrame({
+        'Date': pd.date_range(start=start_date, end=end_date),
+        'USD_EUR': np.random.normal(1.1, 0.05, 1461),  # Simulated USD/EUR exchange rate
+        'Oil_Price': np.random.normal(60, 10, 1461),   # Simulated oil price
+        'Interest_Rate': np.random.normal(2, 0.5, 1461) # Simulated interest rate
+    }).set_index('Date')
+    
+    processed_data = preprocess_financial_data(data, economic_data)
+    print("Processed data shape:", processed_data.shape)
+    print("Processed data columns:", processed_data.columns)
+    print("First few rows of processed data:")
+    print(processed_data.head())
+
+if __name__ == "__main__":
+    main()`,
+    },
+    {
+        id: '4-2',
+        title: 'preprocessing.py',
+        description: 'preprocessing',
+        starterCode: `import pandas as pd
+import numpy as np
+from sklearn.impute import KNNImputer
+from ta.trend import SMAIndicator, EMAIndicator
+from ta.volatility import BollingerBands
+from ta.momentum import RSIIndicator
+
+def clean_financial_data(df):
+    # Remove rows with any NaN values
+    df = df.dropna()
+    
+    # Remove outliers using IQR method
+    Q1 = df.quantile(0.25)
+    Q3 = df.quantile(0.75)
+    IQR = Q3 - Q1
+    df = df[~((df < (Q1 - 1.5 * IQR)) | (df > (Q3 + 1.5 * IQR))).any(axis=1)]
+    
+    return df
+
+def calculate_returns(df):
+    # Calculate daily and weekly returns
+    df['Daily_Return'] = df['Close'].pct_change()
+    df['Weekly_Return'] = df['Close'].pct_change(5)
+    return df
+
+def add_technical_indicators(df):
+    # Add Simple Moving Average
+    sma = SMAIndicator(close=df['Close'], window=14)
+    df['SMA'] = sma.sma_indicator()
+    
+    # Add Exponential Moving Average
+    ema = EMAIndicator(close=df['Close'], window=14)
+    df['EMA'] = ema.ema_indicator()
+    
+    # Add Bollinger Bands
+    bb = BollingerBands(close=df['Close'], window=20, window_dev=2)
+    df['BB_High'] = bb.bollinger_hband()
+    df['BB_Low'] = bb.bollinger_lband()
+    
+    # Add Relative Strength Index
+    rsi = RSIIndicator(close=df['Close'], window=14)
+    df['RSI'] = rsi.rsi()
+    
+    return df
+
+def merge_economic_data(financial_df, economic_df):
+    return pd.merge(financial_df, economic_df, left_index=True, right_index=True, how='left')
+
+def impute_missing_values(df):
+    imputer = KNNImputer(n_neighbors=5)
+    imputed_data = imputer.fit_transform(df)
+    return pd.DataFrame(imputed_data, columns=df.columns, index=df.index)
+
+def preprocess_financial_data(stock_data, economic_data):
+    processed_data = {}
+    
+    for ticker, df in stock_data.items():
+        # Clean data
+        df = clean_financial_data(df)
+        
+        # Calculate returns
+        df = calculate_returns(df)
+        
+        # Add technical indicators
+        df = add_technical_indicators(df)
+        
+        # Merge with economic data
+        df = merge_economic_data(df, economic_data)
+        
+        # Impute any remaining missing values
+        df = impute_missing_values(df)
+        
+        processed_data[ticker] = df
+    
+    # Combine all processed data into a single DataFrame
+    combined_data = pd.concat(processed_data, axis=1, keys=processed_data.keys())
+    combined_data.columns = ['_'.join(col).strip() for col in combined_data.columns.values]
+    
+    return combined_data`,
+    },
+    {
+        id: '5-1',
+        title: 'main.py',
+        description: 'main financial data handling',
+        starterCode: `class Database:
+    async def execute_query(self, query: str):
+        # Simulated database query
+        await asyncio.sleep(0.1)  # Simulate query execution time
+        if "SELECT balance" in query:
+            return [{"balance": 1000}]
+        elif "SELECT id" in query:
+            return [{"id": 1}]
+        else:
+            return [{"status": "success"}]
+
+class Transaction:
+    def __init__(self, amount: float, sender: str, recipient: str):
+        self.amount = amount
+        self.sender = sender
+        self.recipient = recipient
+
+def validate_transaction(transaction: Transaction) -> bool:
+    # Simulated validation logic
+    await asyncio.sleep(0.1)
+    return transaction.amount > 0
+
+def process_transaction(transaction: Transaction, db: Database):
+    if transaction.amount > 0:
+        if transaction.sender != transaction.recipient:
+            if await validate_transaction(transaction):
+                # Multiple separate database queries
+                sender_balance = await db.execute_query(f"SELECT balance FROM accounts WHERE user='{transaction.sender}'")
+                recipient_exists = await db.execute_query(f"SELECT id FROM accounts WHERE user='{transaction.recipient}'")
+                
+                if sender_balance[0]['balance'] >= transaction.amount and recipient_exists:
+                    # Perform the transaction
+                    await db.execute_query(f"UPDATE accounts SET balance = balance - {transaction.amount} WHERE user='{transaction.sender}'")
+                    await db.execute_query(f"UPDATE accounts SET balance = balance + {transaction.amount} WHERE user='{transaction.recipient}'")
+                    return {"status": "success", "message": "Transaction processed successfully"}
+                else:
+                    return {"status": "error", "message": "Insufficient funds or recipient not found"}
+            else:
+                return {"status": "error", "message": "Transaction validation failed"}
+        else:
+            return {"status": "error", "message": "Sender and recipient cannot be the same"}
+    else:
+        return {"status": "error", "message": "Invalid transaction amount"}
+
+
+# Example usage
+db = Database()
+transaction = Transaction(100.0, "sender@example.com", "recipient@example.com")
+result = process_transaction(transaction, db)
+print(result)`
+    }
 ];

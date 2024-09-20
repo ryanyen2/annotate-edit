@@ -241,7 +241,9 @@ export async function executeCode(editor: Editor, codeShapeId: TLShapeId) {
     //     }
     // }
 
-    const codeEditorShape = editor.getShape<CodeEditorShape>(codeShapeId)
+    let codeEditorShape = editor.getShape<CodeEditorShape>(codeShapeId)
+    if (!codeEditorShape) codeEditorShape = editor.getCurrentPageShapes().find(shape => shape.type === 'code-editor-shape') as CodeEditorShape
+    console.log(codeEditorShape)
     if (!codeEditorShape || codeEditorShape.props.code === '') { throw Error('No code to execute.') }
 
     const allSelectedCode = await codeRefactoring(codeEditorShape.props.code)
@@ -254,6 +256,8 @@ export async function executeCode(editor: Editor, codeShapeId: TLShapeId) {
     const { error, stdout, stderr } = (await xPython.exec({
         code: code,
     })) as CodeExecReturnValue;
+
+    console.log('stdout', stdout, error, stderr)
 
     if (error || !stdout) {
         throw Error(error || 'No output from the code.')
@@ -285,7 +289,7 @@ export async function executeCode(editor: Editor, codeShapeId: TLShapeId) {
     }
     console.log(htmlResult);
     editor.updateShape<CodeEditorShape>({
-        id: codeShapeId,
+        id: codeEditorShape.id,
         type: 'code-editor-shape',
         isLocked: false,
         props: {
@@ -295,7 +299,7 @@ export async function executeCode(editor: Editor, codeShapeId: TLShapeId) {
     })
 
     editor.updateShape<CodeEditorShape>({
-        id: codeShapeId,
+        id: codeEditorShape.id,
         type: 'code-editor-shape',
         isLocked: true
     })

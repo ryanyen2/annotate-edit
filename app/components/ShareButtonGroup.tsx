@@ -26,7 +26,7 @@ export function ShareButtonGroup({
             {isInterpreting && <span>Thinking...</span>}
             <TaskSelector onTaskChange={onTaskChange} onStoreLog={onStoreLog} />
             {/* <LockCodeEditorButton codeShapeId={codeShapeId} onStoreLog={onStoreLog} /> */}
-            <ExecuteCodeButton codeShapeId={codeShapeId} onStoreLog={onStoreLog} editor={editor} />
+            {/* <ExecuteCodeButton codeShapeId={codeShapeId} onStoreLog={onStoreLog} editor={editor} /> */}
             <ControlBrushes onSelectBrush={onBrushSelect} onStoreLog={onStoreLog} />
             {/* <GenerateCodeButton codeShapeId={codeShapeId} onStoreLog={onStoreLog} editor={editor} /> */}
         </div>

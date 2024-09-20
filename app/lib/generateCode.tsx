@@ -8,12 +8,7 @@ import { addCoordinateToSvg } from './addCoordinateToSvg'
 import { CodeEditorShape } from '../CodeEditorShape/CodeEditorShape'
 
 import { downloadDataURLAsFile } from './downloadDataUrlAsFile'
-// import groupShapes from './objectDetection';
 import * as Diff from 'diff';
-// import Parser from 'web-tree-sitter';
-// import Python from 'tree-sitter-python';
-// import traverse, { NodePath } from '@babel/traverse';
-// import generate from '@babel/generator';
 
 
 export interface Sketch {
@@ -211,10 +206,6 @@ export async function generateCode(
 				isLocked: true
 			})
 		}
-
-		// setEditing
-		// editor.setSelectedShapes([codeShapeId])
-		// editor.setEditingShape(codeShapeId)
 
 	} catch (e) {
 		console.error(e)

@@ -333,39 +333,6 @@ export class CodeEditorShapeUtil extends BaseBoxShapeUtil<CodeEditorShape> {
             highlightField
         ]
 
-        // const handleEditorCreation = (view: EditorView, state: EditorState, shape: CodeEditorShape) => {
-        //     codeMirrorRef.current = {
-        //         editor: document.getElementById(`editor-${shape.id}`) as HTMLDivElement,
-        //         state: state,
-        //         view: view
-        //     }
-
-        //     view.dispatch({
-        //         effects: updateOriginalDoc.of({
-        //             doc: view.state.toText(shape.props.prevCode),
-        //             changes: ChangeSet.empty(0),
-        //         }),
-        //     });
-
-        //     // adjust height to view.contentHeight
-        //     console.log('view.contentHeight', view.contentHeight, shape.props.code);
-        //     // calculate the height of the editor based on the content
-        //     let lineHeight = view.defaultLineHeight;
-        //     let height = view.contentHeight;
-        //     let lines = view.state.doc.lines;
-        //     let contentHeight = lineHeight * lines;
-        //     console.log('contentHeight', contentHeight, shape.props.h);
-
-        //     this.editor.updateShape<CodeEditorShape>({
-        //         id: shape.id,
-        //         type: 'code-editor-shape',
-        //         isLocked: false,
-        //         props: {
-        //             ...shape.props,
-        //             h: shape.props.h < contentHeight ? contentHeight : shape.props.h,
-        //         },
-        //     });
-        // }
 
         useEffect(() => {
             const view = codeMirrorRef.current?.view;
@@ -390,7 +357,7 @@ export class CodeEditorShapeUtil extends BaseBoxShapeUtil<CodeEditorShape> {
                     isLocked: false,
                     props: {
                         ...shape.props,
-                        // h: view?.contentHeight || shape.props.h,
+                        h: view?.contentHeight || shape.props.h,
                     }
                 })
 
@@ -422,11 +389,11 @@ export class CodeEditorShapeUtil extends BaseBoxShapeUtil<CodeEditorShape> {
         }, [shape.props.code, shape.props.prevCode])
 
 
-        // useEffect(() => {
-        //     if (shape.props.res) {
-        //         console.log('shape.props.res', shape.props.res);
-        //     }
-        // }, [shape.props.res]);
+        useEffect(() => {
+            if (shape.props.res) {
+                console.log('shape.props.res', shape.props.res);
+            }
+        }, [shape.props.res]);
 
 
         const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
@@ -477,7 +444,6 @@ export class CodeEditorShapeUtil extends BaseBoxShapeUtil<CodeEditorShape> {
         }, [selectionRange]);
 
         const handleCopy = () => {
-            // TODO: can't copy on touch device
             const view = codeMirrorRef.current?.view;
             if (view && selectionRange) {
                 const selectedText = view.state.sliceDoc(selectionRange.anchor, selectionRange.head);
@@ -517,7 +483,6 @@ export class CodeEditorShapeUtil extends BaseBoxShapeUtil<CodeEditorShape> {
         };
 
         const handleDoubleClick = (e: React.MouseEvent<HTMLDivElement>) => {
-            // TODO: disable (override) double click edit
             e.preventDefault();
             e.stopPropagation();
             return
@@ -546,7 +511,7 @@ export class CodeEditorShapeUtil extends BaseBoxShapeUtil<CodeEditorShape> {
                         ref={codeMirrorRef}
                         value={shape.props.code}
                         style={{
-                            fontSize: '18px',
+                            fontSize: '22px',
                             border: '1px solid var(--color-panel-contrast)',
                             borderRadius: 'var(--radius-2)',
                             backgroundColor: 'var(--color-background)',
@@ -572,7 +537,7 @@ export class CodeEditorShapeUtil extends BaseBoxShapeUtil<CodeEditorShape> {
                     // }}
                     />
                 </div>
-                {shape.props.res && (
+                {(
                     <div id="result-view" style={{
                         width: '100%',
                         minHeight: '20vh',

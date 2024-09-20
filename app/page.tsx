@@ -565,6 +565,7 @@ export default function App() {
 	const taskId = useRef<string | null>(null);
 	const userId = useRef<string | null>(null);
 	const newShapeId = useRef<TLShapeId>(createShapeId());
+	const [currentCodeShapeId, setCurrentCodeShapeId] = useState<TLShapeId | null>(null);
 
 	const [events, setEvents] = useState<any[]>([])
 	const [isInterpreting, setIsInterpreting] = useState<boolean>(false);
@@ -707,9 +708,6 @@ export default function App() {
 
 								handleManualCodeChange(currentCode.prevCode, editor)
 								editor.deleteShapes([lastShape.id])
-								// const allShapes = editor.getCurrentPageShapes()
-								// const drawShapes = allShapes.filter((shape) => shape.type === 'draw')
-								// editor.deleteShapes(drawShapes.map((shape) => shape.id))
 							}
 						} else if (result.Name === 'check' && result.Score > 0.85) {
 							// accept changes
@@ -788,23 +786,25 @@ export default function App() {
 
 	// Parse URL for userId once on component mount
 	useEffect(() => {
-		const url = new URL(window.location.href);
-		const urlParams = new URLSearchParams(window.location.search);
-		const userIdFromUrl = urlParams.get('userId');
-		if (userIdFromUrl) {
-			userId.current = userIdFromUrl;
-		}
-		console.log('userIdFromUrl', userIdFromUrl);
+		// const url = new URL(window.location.href);
+		// const urlParams = new URLSearchParams(window.location.search);
+		// const userIdFromUrl = urlParams.get('userId');
+		// if (userIdFromUrl) {
+		// 	userId.current = userIdFromUrl;
+		// }
 
-		const taskIdFromUrl = urlParams.get('taskId');
+		// const taskIdFromUrl = urlParams.get('taskId');
 
-		if (taskIdFromUrl) {
-			const task = userStudyTasks.find(task => task.id === taskIdFromUrl);
-			if (task) {
-				handleTaskChange(task);
-				handleStoreLog({ type: 'task-change', data: taskIdFromUrl });
-			}
-		}
+		// if (taskIdFromUrl) {
+		// 	const task = userStudyTasks.find(task => task.id === taskIdFromUrl);
+		// 	if (task) {
+		// 		handleTaskChange(task);
+		// 		handleStoreLog({ type: 'task-change', data: taskIdFromUrl });
+		// 	}
+		// }
+		userId.current = 'anonymous';
+		taskId.current = '3-1';
+		handleTaskChange(userStudyTasks.find(task => task.id === taskId.current) as Task);
 
 		window.oncontextmenu = function (event) {
 			event.preventDefault();
@@ -813,11 +813,6 @@ export default function App() {
 		};
 	}, []);
 
-	// useEffect(() => {
-	// 	if (recogHistory.size > 0) {
-	// 		console.log('recogHistory', recogHistory);
-	// 	}
-	// }, [recogHistory]);
 
 	const handleTaskChange = (task: Task) => {
 		taskId.current = task.id;
@@ -851,17 +846,10 @@ export default function App() {
 	}
 
 	const handleStoreLog = async (log: any) => {
-		// console.log('log', log, userId.current, taskId.current);
-		taskId.current = '10'
-		if (!taskId.current) {
-			console.error('No taskId or userId');
-			return;
-		}
-
 		const logEvent: LogEvent = {
 			type: log.type,
 			userId: userId.current || 'anonymous',
-			taskId: taskId.current,
+			taskId: taskId.current || '10',
 			data: log.data || null,
 			timestamp: Date.now(),
 		};
@@ -887,6 +875,11 @@ export default function App() {
 		}
 	}
 
+	// use effect handle shape ID
+	useEffect(() => {
+		if (newShapeId.current) setCurrentCodeShapeId(newShapeId.current);
+	}, [newShapeId.current]);
+
 	const handleNewEditor = (task: Task) => {
 		// remove current code editor and create new one
 		const editor = editorRef.current;
@@ -900,6 +893,8 @@ export default function App() {
 		})
 		editor.deleteShapes([...shapes.map((shape) => shape.id)])
 		newShapeId.current = createShapeId();
+		setCurrentCodeShapeId(newShapeId.current);
+
 		editor.createShape<CodeEditorShape>({
 			id: newShapeId.current,
 			type: 'code-editor-shape',
@@ -915,6 +910,9 @@ export default function App() {
 		})
 		// handleTaskChange(task);
 	}
+
+	// const getNewShapeId = useCallback(() => newShapeId.current, []);
+
 
 	return (
 		<div className='app-container'>
@@ -955,46 +953,6 @@ export default function App() {
 							return;
 						}
 
-						// editor.getCurrentTool().onTripleClick = (info: TLClickEventInfo) => {
-						// 	// if (doubleClickTimeout) {
-						// 	// 	clearTimeout(doubleClickTimeout);
-						// 	// 	doubleClickTimeout = null;
-						// 	// }
-						// 	console.log('triple_click', info);
-						// 	editor.redo();
-						// 	return;
-						// }
-						// editor.getCurrentTool().onDoubleClick = (info: TLClickEventInfo) => {
-						// 	handleClick(info, editor);
-						// }
-
-						// editor.getCurrentTool().onTripleClick = (info: TLClickEventInfo) => {
-						// 	handleClick(info, editor);
-						// }
-
-						// editor.getCurrentTool().onPointerDown = (info: TLPointerEventInfo) => {
-						// 	const currentTime = Date.now();
-						// 	if (currentTime - lastClickTime.current < TRIPLE_CLICK_THRESHOLD) {
-						// 		clickCount.current++;
-						// 	} else {
-						// 		clickCount.current = 1;
-						// 	}
-						// 	lastClickTime.current = currentTime;
-
-						// 	if (clickCount.current === 2) {
-						// 		setTimeout(() => {
-						// 			if (clickCount.current === 2) {
-						// 				console.log('double_click');
-						// 				editor.undo();
-						// 			}
-						// 		}, TRIPLE_CLICK_THRESHOLD);
-						// 	} else if (clickCount.current === 3) {
-						// 		console.log('triple_click');
-						// 		editor.redo();
-						// 		clickCount.current = 0;
-						// 	}
-						// };
-
 						editor.getInitialMetaForShape = (_shape) => {
 							return {
 								updatedBy: editor.user.getId(),
@@ -1029,7 +987,7 @@ export default function App() {
 							)}
 						</div>
 						<GenerateCodeButton interpretation={interpretationResult ? interpretationResult.action : ''} editor={editorRef.current as Editor} codeShapeId={newShapeId.current} onStoreLog={handleStoreLog} />
-						<ExecuteCodeButton editor={editorRef.current as Editor} codeShapeId={newShapeId.current} onStoreLog={handleStoreLog} />
+						<ExecuteCodeButton editor={editorRef.current as Editor} codeShapeId={currentCodeShapeId!} onStoreLog={handleStoreLog} />
 					</div>
 					{/* <LockCodeEditorButton codeShapeId={newShapeId} onStoreLog={handleStoreLog} /> */}
 				</Tldraw>

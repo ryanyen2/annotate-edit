@@ -22,12 +22,13 @@ export default function Admin() {
     const [filterText, setFilterText] = useState('');
 
     useEffect(() => {
-        const url = new URL(window.location.href);
-        const urlParams = new URLSearchParams(window.location.search);
-        const userIdFromUrl = urlParams.get('userId');
-        if (userIdFromUrl) {
-            userId.current = userIdFromUrl;
-        }
+        // const url = new URL(window.location.href);
+        // const urlParams = new URLSearchParams(window.location.search);
+        // const userIdFromUrl = urlParams.get('userId');
+        // if (userIdFromUrl) {
+        //     userId.current = userIdFromUrl;
+        // } else 
+        userId.current = 'anonymous';
 
 
         getAllDataFromCollection(`${userId.current}_${selectedTaskId}`).then((data) => {
