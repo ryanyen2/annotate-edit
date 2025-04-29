@@ -13,6 +13,7 @@ export async function getCodeFromOpenAI({
     text,
     grid,
     previousCodeEditors = [],
+    // combinedCode,
     intended_edit,
 }: {
     interpretation: string
@@ -25,9 +26,12 @@ export async function getCodeFromOpenAI({
         labels: boolean
     }
     previousCodeEditors?: CodeEditorShape[]
+    // combinedCode?: string
     intended_edit?: string
 }) {
     if (!apiKey) throw Error('You need to provide an API key (sorry)')
+
+
 
     const messages: GPT4oCompletionRequest['messages'] = [
         {
@@ -36,7 +40,7 @@ export async function getCodeFromOpenAI({
         },
         {
             role: 'user',
-            content: [],
+            content: []
         },
     ]
 
@@ -44,74 +48,14 @@ export async function getCodeFromOpenAI({
 
     userContent.push({
         type: 'text',
-        text: `If user asks to flatten the nested if statements, you can provide a code snippet: def process_transaction(transaction: Transaction, db: Database):
-    if transaction.amount <= 0:
-        return {"status": "error", "message": "Invalid transaction amount"}
-    
-    if transaction.sender == transaction.recipient:
-        return {"status": "error", "message": "Sender and recipient cannot be the same"}
-    
-    if not await validate_transaction(transaction):
-        return {"status": "error", "message": "Transaction validation failed"}
-    
-    sender_balance = await db.execute_query(f"SELECT balance FROM accounts WHERE user='{transaction.sender}'")
-    recipient_exists = await db.execute_query(f"SELECT id FROM accounts WHERE user='{transaction.recipient}'")
-    
-    if not (sender_balance[0]['balance'] >= transaction.amount and recipient_exists):
-        return {"status": "error", "message": "Insufficient funds or recipient not found"}
-    
-    # Perform the transaction
-    await db.execute_query(f"UPDATE accounts SET balance = balance - {transaction.amount} WHERE user='{transaction.sender}'")
-    await db.execute_query(f"UPDATE accounts SET balance = balance + {transaction.amount} WHERE user='{transaction.recipient}'")
-    return {"status": "success", "message": "Transaction processed successfully"}`,
-    })
-
-
-    userContent.push({
-        type: 'text',
-        text: `Example: if user asks to combine queries into a single query, you can provide a code snippet: await db.execute_query(f"""
-    BEGIN;
-    UPDATE accounts SET balance = balance - {transaction.amount} WHERE user='{transaction.sender}';
-    UPDATE accounts SET balance = balance + {transaction.amount} WHERE user='{transaction.recipient}';
-    COMMIT;
-""")
-return {"status": "success", "message": "Transaction processed successfully"}`,
-    })
-
-
-    userContent.push({
-        type: 'text',
-        text: `and if ask about adding a try catch block, you can provide a code snippet:
-        if sender_balance[0]['balance'] >= transaction.amount and recipient_exists:
-        try:
-            db.execute_query(f"""
-                BEGIN;
-                UPDATE accounts SET balance = balance - {transaction.amount} WHERE user='{transaction.sender}';
-                UPDATE accounts SET balance = balance + {transaction.amount} WHERE user='{transaction.recipient}';
-                COMMIT;
-            """)
-            return {"status": "success", "message": "Transaction processed successfully"}
-        except Exception as e:
-            db.execute_query("ROLLBACK;")
-            return {"status": "error", "message": f"Transaction failed: {str(e)}"}
-    else:
-        return {"status": "error", "message": "Insufficient funds or recipient not found"}`
-    })
-
-    userContent.push({
-        type: 'text',
-        text: `Example: if user circles all database operations with  draws a diagram with multiple "Query" boxes flowing into a "Batch Query" box. you can add a class: class QueryBatch:
-    def __init__(self):
-        self.queries = []
-    
-    def add(self, query):
-        self.queries.append(query)
-    
-    def execute(self, db):
-        return db.execute_query("; ".join(self.queries))
+        text: `If users circled some words from the output area (below the code editor) and crossed out, it means user want to bypass those words (e.g., "used", "provide", "increasingly") when preprocessing the text, add a line of code to exclude "used" and "provide" from the text.
+        For example, if user circled "used", "increasingly" and "provide" and crossed out, and already have a list of words, you should add:
+        filtered_words = ["used", "provide", "increasingly"]
+        words = [word for word in words if word not in filtered_words]
         `,
     })
 
+   
     userContent.push({
         type: 'text',
         text: intended_edit?.length ? OPENAI_USER_EDIT_PARTIAL_CODE_PROMPT : OPENAI_USER_MAKE_CODE_PROMPT,
@@ -156,6 +100,12 @@ return {"status": "success", "message": "Transaction processed successfully"}`,
             text: `The users also included the code in the code editor:\n${preview.props.code}`,
         })
     }
+    // if (combinedCode) {
+    //     userContent.push({
+    //         type: 'text',
+    //         text: `The users also included the code in the code editor, just focus on modifying the pipeline.py file:\n${combinedCode}`,
+    //     })
+    // }
 
     if (intended_edit?.length) {
         userContent.push({

@@ -13,6 +13,7 @@ Use this repo as a template to create Make Real style apps like
 4. Create a `.env.local` file that contains `OPENAI_API_KEY=your api key here`
 5. Run `npm run dev`
 6. Open [localhost:3000](http://localhost:3000) and make some stuff real!
+7. `ngrok http --domain=rare-monitor-supposedly.ngrok-free.app 3000`
 
 ## How it works
 

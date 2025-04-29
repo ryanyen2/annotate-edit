@@ -288,7 +288,7 @@ function InsideOfContext({
 				prevCode: currentTask?.starterCode,
 				code: currentTask?.starterCode,
 				w: (window.innerWidth) * 1.5,
-				h: (window.innerHeight) * 2,
+				h: (window.innerHeight),
 			},
 		})
 
@@ -624,7 +624,8 @@ export default function App() {
 				editor.setCurrentTool('draw');
 				toolJustSwitched = true;
 			}
-		} else if (data.type === 'pointer' && data.name === 'pointer_down' && !data.isPen) {
+		} 
+		else if (data.type === 'pointer' && data.name === 'pointer_down' && !data.isPen) {
 			const tool = editor.getCurrentToolId();
 			if (tool !== 'select') {
 				editor.setCurrentTool('select');
@@ -633,19 +634,20 @@ export default function App() {
 			if (tool === 'draw') {
 				editor.undo();
 			}
-		} else if (data.type === 'pointer' && data.name === 'long_press' && !data.isPen) {
-			console.log('long press', data)
+		} 
+		// else if (data.type === 'pointer' && data.name === 'long_press' && !data.isPen) {
+		// 	console.log('long press', data)
 
-			editor.updateShape<CodeEditorShape>({
-				id: newShapeId.current,
-				type: 'code-editor-shape',
-				isLocked: true,
-			})
+		// 	editor.updateShape<CodeEditorShape>({
+		// 		id: newShapeId.current,
+		// 		type: 'code-editor-shape',
+		// 		isLocked: true,
+		// 	})
 
-			editor.setEditingShape(newShapeId.current);
-			editor.setSelectedShapes([newShapeId.current]);
-			return
-		}
+		// 	editor.setEditingShape(newShapeId.current);
+		// 	editor.setSelectedShapes([newShapeId.current]);
+		// 	return
+		// }
 		// editor.setCurrentTool('draw');
 
 		if (toolJustSwitched) {
@@ -803,7 +805,7 @@ export default function App() {
 		// 	}
 		// }
 		userId.current = 'anonymous';
-		taskId.current = '3-1';
+		taskId.current = '4-2';
 		handleTaskChange(userStudyTasks.find(task => task.id === taskId.current) as Task);
 
 		window.oncontextmenu = function (event) {
@@ -944,10 +946,8 @@ export default function App() {
 							console.log('Double click', multiTouchLength.current)
 							editor.cancelDoubleClick();
 							if (multiTouchLength.current === 2) {
-								console.log('undo2')
 								editor.undo();
 							} else if (multiTouchLength.current === 3) {
-								console.log('redo3')
 								editor.redo();
 							}
 							return;

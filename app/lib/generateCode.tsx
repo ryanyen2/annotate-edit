@@ -9,7 +9,7 @@ import { CodeEditorShape } from '../CodeEditorShape/CodeEditorShape'
 
 import { downloadDataURLAsFile } from './downloadDataUrlAsFile'
 import * as Diff from 'diff';
-
+import { userStudyTasks } from './tasks';
 
 export interface Sketch {
 	shape: string;
@@ -45,6 +45,7 @@ export async function generateCode(
 		background: true,
 		bounds: box,
 		padding: 50,
+		preserveAspectRatio: 'none'
 	})
 
 	if (!svgString) {
@@ -65,7 +66,7 @@ export async function generateCode(
 		scale: 1,
 	})
 	const dataUrl = await blobToBase64(blob!)
-	// downloadDataURLAsFile(dataUrl, 'tldraw.png')
+	downloadDataURLAsFile(dataUrl, 'tldraw.png')
 
 	onStoreLog({ type: 'generate-param', data: dataUrl })
 
@@ -75,6 +76,15 @@ export async function generateCode(
 
 	let original_code, code_edit;
 
+	const taskId = '4-2';
+    const taskPrefix = taskId.split('-')[0];
+
+    const currentCode = editor.getShape<CodeEditorShape>(codeShapeId)?.props.code || '';
+    let relatedFiles = userStudyTasks.filter(task => task.id.startsWith(taskPrefix) && task.id !== taskId);
+    relatedFiles = relatedFiles.reverse();
+    const relatedFileCode = relatedFiles.map(task => task.starterCode).join('\n\n');
+    const combinedCode = `${currentCode}\n\n${relatedFileCode}`;
+
 	try {
 		const json = await getCodeFromOpenAI({
 			interpretation,
@@ -82,6 +92,7 @@ export async function generateCode(
 			apiKey,
 			text: getSelectionAsText(editor),
 			grid,
+			// combinedCode,
 			previousCodeEditors,
 			intended_edit,
 		});

@@ -19,6 +19,7 @@ export default function FileManager({ onTaskChange }: FileManagerProps) {
         'Task 3',
         'Task 4',
         'Task 5',
+        'Task 6',
     ]);
 
     const handleFileClick = (taskId: string) => {
@@ -45,6 +46,7 @@ export default function FileManager({ onTaskChange }: FileManagerProps) {
         'Task 3': userStudyTasks.filter(task => task.id.startsWith('3')),
         'Task 4': userStudyTasks.filter(task => task.id.startsWith('4')),
         'Task 5': userStudyTasks.filter(task => task.id.startsWith('5')),
+        'Task 6': userStudyTasks.filter(task => task.id.startsWith('6')),
     };
 
     return (

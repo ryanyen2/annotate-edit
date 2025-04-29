@@ -3,6 +3,7 @@ export interface Task {
     title: string;
     description: string;
     starterCode: string;
+    files?: { [key: string]: string };
 }
 
 export const userStudyTasks: Task[] = [
@@ -214,49 +215,6 @@ print(processed_df)`,
         id: '3-2',
         title: 'Task 3-2',
         description: 'Visualize Data Distribution',
-        //         starterCode: `import numpy as np
-        // import pandas as pd
-        // from typing import List, Dict
-        // import matplotlib.pyplot as plt
-        // from sklearn.preprocessing import MinMaxScaler
-
-        // # Sample data
-        // data = {
-        //     'feature1': [1.0, 2.0, np.nan, 4.0, 5.0],
-        //     'feature2': [2.0, np.nan, 3.0, 4.0, 5.0],
-        //     'label': [0, 1, 0, 1, 1]
-        // }
-        // df = pd.DataFrame(data)
-
-        // class DataProcessor:
-        //     def __init__(self, dataframe: pd.DataFrame):
-        //         self.dataframe = dataframe
-
-        //     def preprocess(self) -> pd.DataFrame:
-        //         return self.dataframe
-
-        //     def visualize_distribution(self):
-        //         feature_columns = self.dataframe.columns.drop('label')
-        //         for column in feature_columns:
-        //             plt.figure(figsize=(6, 4))
-        //             plt.hist(self.dataframe[column].dropna(), bins=10, density=True, alpha=0.6, color='g')
-        //             plt.title(f'Distribution of {column}')
-        //             plt.ylabel('Density')
-        //             plt.xlabel(column)
-        //             plt.grid(axis='y', alpha=0.75)
-        //             plt.show()
-
-        //     def scale_features(self) -> pd.DataFrame:
-        //         scaler = MinMaxScaler()
-        //         feature_columns = self.dataframe.columns.drop('label')
-        //         self.dataframe[feature_columns] = scaler.fit_transform(self.dataframe[feature_columns])
-        //         return self.dataframe
-
-        // # Example usage
-        // processor = DataProcessor(df)
-        // processor.visualize_distribution()
-        // processed_df = processor.scale_features()
-        // print(processed_df)`,
         starterCode: `import numpy as np
 import pandas as pd
 from typing import List, Dict
@@ -293,181 +251,216 @@ class DataProcessor:
 # Example usage
 processor = DataProcessor(df)
 processed_df = processor.preprocess()
-print(processed_df)
-`,
+print(processed_df)`,
     },
+    // TASK 4 - CHI Conference Data Analysis
     {
         id: '4-1',
-        title: 'main.py',
-        description: 'main data handling',
-        starterCode: `from preprocessing import preprocess_financial_data
-import pandas as pd
-import yfinance as yf
+        title: 'CHI Paper Abstract Analysis',
+        description: 'Create a visualization of CHI 2025 papers data',
+        starterCode: `import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+import numpy as np
+from collections import Counter
+import re
 
-def main():
-    # Download sample financial data
-    tickers = ['AAPL', 'GOOGL', 'MSFT', 'AMZN']
-    start_date = '2020-01-01'
-    end_date = '2023-12-31'
-    
-    data = {}
-    for ticker in tickers:
-        data[ticker] = yf.download(ticker, start=start_date, end=end_date)
-    
-    # Additional economic indicators (you would typically get these from an API or database)
-    economic_data = pd.DataFrame({
-        'Date': pd.date_range(start=start_date, end=end_date),
-        'USD_EUR': np.random.normal(1.1, 0.05, 1461),  # Simulated USD/EUR exchange rate
-        'Oil_Price': np.random.normal(60, 10, 1461),   # Simulated oil price
-        'Interest_Rate': np.random.normal(2, 0.5, 1461) # Simulated interest rate
-    }).set_index('Date')
-    
-    processed_data = preprocess_financial_data(data, economic_data)
-    print("Processed data shape:", processed_data.shape)
-    print("Processed data columns:", processed_data.columns)
-    print("First few rows of processed data:")
-    print(processed_data.head())
+# df is CHI_2025_program.json (pre-loaded)
+print(df.head())
 
-if __name__ == "__main__":
-    main()`,
+plt.figure(figsize=(10, 6))
+sns.countplot(data=df, x='award', palette='viridis')
+plt.title('Papers by Award Status')
+plt.xlabel('Award')
+plt.ylabel('Count')
+plt.xticks(rotation=45)
+plt.tight_layout()
+plt.show()`,
     },
     {
         id: '4-2',
-        title: 'preprocessing.py',
-        description: 'preprocessing',
+        title: 'Advanced CHI Paper Analysis Dashboard',
+        description: 'Enhance the visualization to analyze trends and patterns in CHI 2025 papers',
         starterCode: `import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
 import numpy as np
-from sklearn.impute import KNNImputer
-from ta.trend import SMAIndicator, EMAIndicator
-from ta.volatility import BollingerBands
-from ta.momentum import RSIIndicator
+from collections import Counter
+import re
 
-def clean_financial_data(df):
-    # Remove rows with any NaN values
-    df = df.dropna()
-    
-    # Remove outliers using IQR method
-    Q1 = df.quantile(0.25)
-    Q3 = df.quantile(0.75)
-    IQR = Q3 - Q1
-    df = df[~((df < (Q1 - 1.5 * IQR)) | (df > (Q3 + 1.5 * IQR))).any(axis=1)]
-    
-    return df
+# df is CHI_2025_program.json (pre-loaded)
+# print(df.head())
 
-def calculate_returns(df):
-    # Calculate daily and weekly returns
-    df['Daily_Return'] = df['Close'].pct_change()
-    df['Weekly_Return'] = df['Close'].pct_change(5)
-    return df
 
-def add_technical_indicators(df):
-    # Add Simple Moving Average
-    sma = SMAIndicator(close=df['Close'], window=14)
-    df['SMA'] = sma.sma_indicator()
+def process_text(text):
+    stopwords = ['and', 'the', 'to', 'of', 'in', 'a', 'is', 'that', 'for', 'on', 'with', 'as', 'by', 'this', 'we', 'are', 'from']
+    words = [word for word in text.split(" ") if word not in stopwords and len(word) > 1]
     
-    # Add Exponential Moving Average
-    ema = EMAIndicator(close=df['Close'], window=14)
-    df['EMA'] = ema.ema_indicator()
-    
-    # Add Bollinger Bands
-    bb = BollingerBands(close=df['Close'], window=20, window_dev=2)
-    df['BB_High'] = bb.bollinger_hband()
-    df['BB_Low'] = bb.bollinger_lband()
-    
-    # Add Relative Strength Index
-    rsi = RSIIndicator(close=df['Close'], window=14)
-    df['RSI'] = rsi.rsi()
-    
-    return df
+    return words
 
-def merge_economic_data(financial_df, economic_df):
-    return pd.merge(financial_df, economic_df, left_index=True, right_index=True, how='left')
+countries = []
+for authors_list in df['authors']:
+    for author in authors_list:
+        if 'affiliations' in author and len(author['affiliations']) > 0:
+            if 'country' in author['affiliations'][0]:
+                countries.append(author['affiliations'][0]['country'])
 
-def impute_missing_values(df):
-    imputer = KNNImputer(n_neighbors=5)
-    imputed_data = imputer.fit_transform(df)
-    return pd.DataFrame(imputed_data, columns=df.columns, index=df.index)
 
-def preprocess_financial_data(stock_data, economic_data):
-    processed_data = {}
-    
-    for ticker, df in stock_data.items():
-        # Clean data
-        df = clean_financial_data(df)
-        
-        # Calculate returns
-        df = calculate_returns(df)
-        
-        # Add technical indicators
-        df = add_technical_indicators(df)
-        
-        # Merge with economic data
-        df = merge_economic_data(df, economic_data)
-        
-        # Impute any remaining missing values
-        df = impute_missing_values(df)
-        
-        processed_data[ticker] = df
-    
-    # Combine all processed data into a single DataFrame
-    combined_data = pd.concat(processed_data, axis=1, keys=processed_data.keys())
-    combined_data.columns = ['_'.join(col).strip() for col in combined_data.columns.values]
-    
-    return combined_data`,
+track_counts = df['trackId'].value_counts().reset_index()
+track_counts.columns = ['Track ID', 'Count']
+plt.figure(figsize=(16, 12))
+
+
+all_words = []
+for abstract in df['abstract']:
+    all_words.extend(process_text(abstract))
+print(all_words[:10])
+
+word_counts = Counter(all_words).most_common(10)
+word_df = pd.DataFrame(word_counts, columns=['Word', 'Count'])
+sns.barplot(data=word_df, x='Word', y='Count', palette='mako')
+plt.title('Top 10 Words in Abstracts')
+plt.xlabel('Word')
+plt.ylabel('Frequency')
+plt.xticks(rotation=45)
+
+plt.tight_layout()
+plt.show()`,
     },
-    {
-        id: '5-1',
-        title: 'main.py',
-        description: 'main financial data handling',
-        starterCode: `class Database:
-    async def execute_query(self, query: str):
-        # Simulated database query
-        await asyncio.sleep(0.1)  # Simulate query execution time
-        if "SELECT balance" in query:
-            return [{"balance": 1000}]
-        elif "SELECT id" in query:
-            return [{"id": 1}]
-        else:
-            return [{"status": "success"}]
+//     {
+//         id: '5-1',
+//         title: 'main.py',
+//         description: 'main financial data handling',
+//         starterCode: `class Database:
+//     async def execute_query(self, query: str):
+//         # Simulated database query
+//         await asyncio.sleep(0.1)  # Simulate query execution time
+//         if "SELECT balance" in query:
+//             return [{"balance": 1000}]
+//         elif "SELECT id" in query:
+//             return [{"id": 1}]
+//         else:
+//             return [{"status": "success"}]
 
-class Transaction:
-    def __init__(self, amount: float, sender: str, recipient: str):
-        self.amount = amount
-        self.sender = sender
-        self.recipient = recipient
+// class Transaction:
+//     def __init__(self, amount: float, sender: str, recipient: str):
+//         self.amount = amount
+//         self.sender = sender
+//         self.recipient = recipient
 
-def validate_transaction(transaction: Transaction) -> bool:
-    # Simulated validation logic
-    await asyncio.sleep(0.1)
-    return transaction.amount > 0
+// def validate_transaction(transaction: Transaction) -> bool:
+//     # Simulated validation logic
+//     await asyncio.sleep(0.1)
+//     return transaction.amount > 0
 
-def process_transaction(transaction: Transaction, db: Database):
-    if transaction.amount > 0:
-        if transaction.sender != transaction.recipient:
-            if await validate_transaction(transaction):
-                # Multiple separate database queries
-                sender_balance = await db.execute_query(f"SELECT balance FROM accounts WHERE user='{transaction.sender}'")
-                recipient_exists = await db.execute_query(f"SELECT id FROM accounts WHERE user='{transaction.recipient}'")
+// def process_transaction(transaction: Transaction, db: Database):
+//     if transaction.amount > 0:
+//         if transaction.sender != transaction.recipient:
+//             if await validate_transaction(transaction):
+//                 # Multiple separate database queries
+//                 sender_balance = await db.execute_query(f"SELECT balance FROM accounts WHERE user='{transaction.sender}'")
+//                 recipient_exists = await db.execute_query(f"SELECT id FROM accounts WHERE user='{transaction.recipient}'")
                 
-                if sender_balance[0]['balance'] >= transaction.amount and recipient_exists:
-                    # Perform the transaction
-                    await db.execute_query(f"UPDATE accounts SET balance = balance - {transaction.amount} WHERE user='{transaction.sender}'")
-                    await db.execute_query(f"UPDATE accounts SET balance = balance + {transaction.amount} WHERE user='{transaction.recipient}'")
-                    return {"status": "success", "message": "Transaction processed successfully"}
-                else:
-                    return {"status": "error", "message": "Insufficient funds or recipient not found"}
-            else:
-                return {"status": "error", "message": "Transaction validation failed"}
-        else:
-            return {"status": "error", "message": "Sender and recipient cannot be the same"}
-    else:
-        return {"status": "error", "message": "Invalid transaction amount"}
+//                 if sender_balance[0]['balance'] >= transaction.amount and recipient_exists:
+//                     # Perform the transaction
+//                     await db.execute_query(f"UPDATE accounts SET balance = balance - {transaction.amount} WHERE user='{transaction.sender}'")
+//                     await db.execute_query(f"UPDATE accounts SET balance = balance + {transaction.amount} WHERE user='{transaction.recipient}'")
+//                     return {"status": "success", "message": "Transaction processed successfully"}
+//                 else:
+//                     return {"status": "error", "message": "Insufficient funds or recipient not found"}
+//             else:
+//                 return {"status": "error", "message": "Transaction validation failed"}
+//         else:
+//             return {"status": "error", "message": "Sender and recipient cannot be the same"}
+//     else:
+//         return {"status": "error", "message": "Invalid transaction amount"}
 
 
-# Example usage
-db = Database()
-transaction = Transaction(100.0, "sender@example.com", "recipient@example.com")
-result = process_transaction(transaction, db)
-print(result)`
-    }
+// # Example usage
+// db = Database()
+// transaction = Transaction(100.0, "sender@example.com", "recipient@example.com")
+// result = process_transaction(transaction, db)
+// print(result)`,
+//     },
+//     {
+//         id: '6-1',
+//         title: 'main.py',
+//         description: 'main driver code for following tasks',
+//         starterCode: `# main.py
+// # from pipeline import preprocess_pipeline
+
+// def main():
+//     # Load data
+//     train_data = [
+//     {"name": "age", "type": "numerical", "value": [34, 50, 29], "scaling": "standardize"},
+//     {"name": "city", "type": "categorical", "value": ["Paris", "London", "Paris"]}
+//     ]
+
+//     test_data = [
+//         {"name": "age", "type": "numerical", "value": [40, 60, 30], "scaling": "standardize"},
+//         {"name": "city", "type": "categorical", "value": ["London", "Paris", "London"]}
+//     ]
+    
+//     # Preprocess data
+//     train_data = preprocess_pipeline(train_data, "train")
+//     test_data = preprocess_pipeline(test_data, "test")
+
+//     print("Train data:", train_data)
+//     print("Test data:", test_data)
+
+// if __name__ == "__main__":
+//     main()`,
+//     },
+//     {
+//         id: '6-2',
+//         title: 'data_utils.py',
+//         description: 'Utility functions for data handling',
+//         starterCode: `# data_utils.py
+// def min_max_scale(values):
+//     min_val = min(values)
+//     max_val = max(values)
+//     if max_val - min_val == 0:
+//         return [0 for _ in values]
+//     return [(v - min_val) / (max_val - min_val) for v in values]
+
+// # The following functions are placeholders and unused initially,
+// # to be utilized after Alicia refines her sketches.
+// def standardize(values):
+//     mean = sum(values) / len(values) if len(values) > 0 else 0
+//     variance = sum((x - mean) ** 2 for x in values) / len(values) if len(values) > 0 else 0
+//     std_dev = variance ** 0.5
+//     if std_dev == 0:
+//         return [0 for _ in values]
+//     return [(x - mean) / std_dev for x in values]
+
+// def one_hot_encode(values):
+//     unique_vals = sorted(set(values))
+//     encoded = []
+//     for val in values:
+//         vec = {uv: (1 if uv == val else 0) for uv in unique_vals}
+//         encoded.append(vec)
+//     return encoded
+// `,
+//     },
+//     {
+//         id: '6-3',
+//         title: 'pipeline.py',
+//         description: 'The pipeline for data processing',
+//         starterCode: `# pipeline.py
+
+// def preprocess_pipeline(data, data_type):
+//     # data: a list of feature dicts with structure:
+
+//     processed_data = []
+//     for feature in data:
+//         if feature["type"] == "numerical":
+//             scaled_values = min_max_scale(feature["value"])
+//             processed_data.append({"type": "numerical", "name": feature["name"], "value": scaled_values})
+//         elif feature["type"] == "categorical":
+//             # Currently unchanged
+//             processed_data.append(feature)
+
+//     return processed_data
+// `,
+//     },
 ];

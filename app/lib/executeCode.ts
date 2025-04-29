@@ -8,6 +8,7 @@ import { CodeEditorShape } from '../CodeEditorShape/CodeEditorShape'
 import * as xPython from '@x-python/core'
 import { downloadDataURLAsFile } from './downloadDataUrlAsFile';
 import { PreviewShape } from '../PreviewShape/PreviewShape';
+import { userStudyTasks } from './tasks';
 // import { writeFileSync } from 'fs';
 // import { promisify } from 'util';
 
@@ -21,6 +22,7 @@ export interface CodeExecReturnValue {
     stdout: string | null;
     stderr: string | null;
     type: CodeExecResultType;
+    files?: { [key: string]: string };
 }
 
 const packages = {
@@ -225,88 +227,129 @@ const decideExecResultType = (result: any) => {
     }
 };
 
-
 export async function executeCode(editor: Editor, codeShapeId: TLShapeId) {
-    // const selectedShapes = editor.getSelectedShapes()
-
-    // if (selectedShapes.length === 0) throw Error('First select something to execute.')
     await xPython.init();
 
-
-    // const { maxX, midY } = editor.getSelectionPageBounds()!
-    // const newShapeId = createShapeId()
-    // for (const shape of selectedShapes) {
-    //     if (shape.type === 'code-editor-shape') {
-    //         allSelectedCode += (shape as CodeEditorShape).props.code
-    //     }
-    // }
-
-    let codeEditorShape = editor.getShape<CodeEditorShape>(codeShapeId)
-    if (!codeEditorShape) codeEditorShape = editor.getCurrentPageShapes().find(shape => shape.type === 'code-editor-shape') as CodeEditorShape
-    console.log(codeEditorShape)
-    if (!codeEditorShape || codeEditorShape.props.code === '') { throw Error('No code to execute.') }
-
-    const allSelectedCode = await codeRefactoring(codeEditorShape.props.code)
-    await installExtraPackages(allSelectedCode);
-    const { result: code } = await xPython.format({
-        code: allSelectedCode,
-    });
-
-
-    const { error, stdout, stderr } = (await xPython.exec({
-        code: code,
-    })) as CodeExecReturnValue;
-
-    console.log('stdout', stdout, error, stderr)
-
-    if (error || !stdout) {
-        throw Error(error || 'No output from the code.')
+    // Get the latest code for pipeline.py
+    let pipelineCodeShape = editor.getShape<CodeEditorShape>(codeShapeId);
+    if (!pipelineCodeShape) {
+        pipelineCodeShape = editor.getCurrentPageShapes().find(shape => shape.type === 'code-editor-shape') as CodeEditorShape;
+    }
+    if (!pipelineCodeShape || pipelineCodeShape.props.code === '') {
+        throw Error('No code to execute.');
     }
 
-    const resultType = decideExecResultType(stdout) as CodeExecResultType;
+    // Extract task ID safely
+    const taskId = '4-2';
+    const taskPrefix = taskId.split('-')[0];
 
+    const currentCode = pipelineCodeShape.props.code;
+    const relatedFileCode = userStudyTasks.find(task => task.id === taskId)?.starterCode || '';
+    
+    let combinedCode = '';
+    
+    // Special handling for CHI paper analysis tasks (4-1 and 4-2)
+    if (taskPrefix === '4') {
+        try {
+            // Load the CHI data from the public directory as CSV
+            const chiDataResponse = await fetch('/data/CHI_2025_program_cleaned.csv');
+            if (!chiDataResponse.ok) {
+                throw new Error(`Failed to fetch CHI data: ${chiDataResponse.statusText}`);
+            }
+            const csvText = await chiDataResponse.text();
+            
+            // Convert CSV text to a string that can be safely embedded in Python
+            // Escape any triple quotes and newlines to preserve CSV format
+            const escapedCsvText = csvText
+                .replace(/"""/g, '\\"\\"\\"')
+                .replace(/\n/g, '\\n');
+            
+            // Create Python code that directly initializes the DataFrame with the CSV data
+            combinedCode = `
+import pandas as pd
+import io
+
+# Load CHI data from CSV string
+csv_data = """${escapedCsvText}"""
+df = pd.read_csv(io.StringIO(csv_data))
+
+# User code starts here
+${currentCode}
+`;
+        } catch (error) {
+            console.error("Failed to load CHI data:", error);
+            
+            // Create a minimal sample dataset for testing/development
+            const sampleCsv = `id,title,trackId,abstract,award
+1,"Sample Paper 1",track1,"This is a sample abstract for testing.",BEST_PAPER
+2,"Sample Paper 2",track2,"Another sample abstract for testing.",
+3,"Sample Paper 3",track1,"Third sample abstract about HCI.",HONORABLE_MENTION`;
+            
+            combinedCode = `
+import pandas as pd
+import io
+
+# Using sample data since actual data couldn't be loaded
+csv_data = """${sampleCsv}"""
+df = pd.read_csv(io.StringIO(csv_data))
+print("Note: Using sample data instead of actual CHI data")
+
+# User code starts here
+${currentCode}
+`;
+        }
+    } else {
+        combinedCode = `${currentCode}\n\n${relatedFileCode}`;
+    }
+    
+    console.log('Combined code length:', combinedCode);
+    
+    // Refactor and execute the combined code
+    const allSelectedCode = await codeRefactoring(combinedCode);
+    await installExtraPackages(allSelectedCode);
+    const { result: code } = await xPython.format({ code: allSelectedCode });
+
+    const { error, stdout, stderr } = (await xPython.exec({ code })) as CodeExecReturnValue;
+
+    if (error || !stdout) {
+        throw Error(error || 'No output from the code.');
+    }
+
+    console.log(stdout);
+
+    // const resultType = decideExecResultType(stdout) as CodeExecResultType;
+    const resultType = 'text';
     let htmlResult = '';
-    // Match only jpg images in base64 format
+
+    // Process the output
     const images = stdout.match(/data:image\/jpg;base64,[^"]+/g) || [];
     let nonImageContent = stdout;
-
-    // Generate HTML for each image
-    const imageHtml = images.map(image => `<img src="${image}" alt="image" width="400">`).join('');
-
-    // Remove image data from the non-image content
+    const imageHtml = images.map(image => `<img src="${image}" alt="image" width="600">`).join('');
     images.forEach(image => {
         nonImageContent = nonImageContent.replace(image, '');
     });
-
-    // Wrap non-image content in a <pre> tag
     const nonImageHtml = `<pre>${nonImageContent.trim()}</pre>`;
-
-    // Combine HTML results
     htmlResult = `${nonImageHtml}${imageHtml}`;
 
     if (htmlResult === '') {
         throw Error('No result to display.');
     }
-    console.log(htmlResult);
+
     editor.updateShape<CodeEditorShape>({
-        id: codeEditorShape.id,
+        id: pipelineCodeShape.id,
         type: 'code-editor-shape',
         isLocked: false,
         props: {
-            ...codeEditorShape.props,
+            ...pipelineCodeShape.props,
             res: htmlResult,
         },
-    })
+    });
 
     editor.updateShape<CodeEditorShape>({
-        id: codeEditorShape.id,
+        id: pipelineCodeShape.id,
         type: 'code-editor-shape',
-        isLocked: true
-    })
-
-    // set editing
-    // editor.setSelectedShapes([codeShapeId])
-    // editor.setEditingShape(codeShapeId)
+        isLocked: true,
+    });
 
     return htmlResult;
 }

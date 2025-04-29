@@ -44,6 +44,7 @@ export type CodeEditorShape = TLBaseShape<
                 endLine: number
             }
         }
+        taskFiles?: { [key: string]: string }
     }
 >
 
@@ -279,6 +280,7 @@ export class CodeEditorShapeUtil extends BaseBoxShapeUtil<CodeEditorShape> {
         prevCode: T.string,
         res: T.string,
         interpretations: T.any,
+        taskFiles: T.any,
     }
 
     getDefaultProps(): CodeEditorShape['props'] {
@@ -298,7 +300,8 @@ export class CodeEditorShapeUtil extends BaseBoxShapeUtil<CodeEditorShape> {
                     startLine: 0,
                     endLine: 0
                 }
-            }
+            },
+            taskFiles: {}
         }
     }
 
@@ -351,20 +354,19 @@ export class CodeEditorShapeUtil extends BaseBoxShapeUtil<CodeEditorShape> {
             if (codeMirrorRef.current) {
                 const view = codeMirrorRef.current?.view
                 console.log('shape.props.code', view?.contentHeight, shape.props.h);
+
                 this.editor.updateShape<CodeEditorShape>({
                     id: shape.id,
                     type: 'code-editor-shape',
                     isLocked: false,
                     props: {
                         ...shape.props,
-                        h: view?.contentHeight || shape.props.h,
+                        h: Math.max(600, Math.min(1100, shape.props.h)) // Ensure reasonable height
                     }
                 })
 
                 const codeMirrorView = codeMirrorRef.current?.view as EditorView
-                // const codeMirrorState = codeMirrorView?.state
                 if (codeMirrorView) {
-                    // acceptChunk(codeMirrorRef.current?.view as EditorView)
                     codeMirrorView?.dispatch({
                         effects: updateOriginalDoc.of({
                             doc: codeMirrorView.state.toText(shape.props.prevCode),
@@ -375,7 +377,7 @@ export class CodeEditorShapeUtil extends BaseBoxShapeUtil<CodeEditorShape> {
                     const code = shape.props.code;
                     const prevCode = shape.props.prevCode;
                     if (code.length === prevCode.length + 1 && code.endsWith(' ') && code.slice(0, -1) === prevCode) {
-                        undo(codeMirrorView); // This performs the undo operation
+                        undo(codeMirrorView);
                     }
                 }
 
@@ -385,7 +387,6 @@ export class CodeEditorShapeUtil extends BaseBoxShapeUtil<CodeEditorShape> {
                     isLocked: true,
                 })
             }
-
         }, [shape.props.code, shape.props.prevCode])
 
 
@@ -398,50 +399,50 @@ export class CodeEditorShapeUtil extends BaseBoxShapeUtil<CodeEditorShape> {
 
         const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 
-        const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
-            const touch = e.touches[0];
-            const editorView = codeMirrorRef.current?.view;
-            if (editorView) {
-                const pos = editorView.posAtCoords({ x: touch.clientX, y: touch.clientY });
-                if (pos) {
-                    editorView.dispatch({ selection: { anchor: pos, head: pos } });
-                }
-                startPosition.current = editorView.posAtCoords({ x: touch.clientX, y: touch.clientY }) || 0;
-            }
-            e.stopPropagation();
-            return;
-        }
+        // const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+        //     const touch = e.touches[0];
+        //     const editorView = codeMirrorRef.current?.view;
+        //     if (editorView) {
+        //         const pos = editorView.posAtCoords({ x: touch.clientX, y: touch.clientY });
+        //         if (pos) {
+        //             editorView.dispatch({ selection: { anchor: pos, head: pos } });
+        //         }
+        //         startPosition.current = editorView.posAtCoords({ x: touch.clientX, y: touch.clientY }) || 0;
+        //     }
+        //     e.stopPropagation();
+        //     return;
+        // }
 
-        const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
-            const touch = e.touches[0];
-            const editorView = codeMirrorRef.current?.view;
-            if (editorView) {
-                const pos = editorView.posAtCoords({ x: touch.clientX, y: touch.clientY });
-                if (pos && startPosition.current) {
-                    editorView.dispatch({ selection: { anchor: startPosition.current, head: pos } });
-                } else if (pos) {
-                    editorView.dispatch({ selection: { anchor: pos, head: pos } });
-                    startPosition.current = pos || 0;
-                }
-            }
-            return;
-        }
+        // const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+        //     const touch = e.touches[0];
+        //     const editorView = codeMirrorRef.current?.view;
+        //     if (editorView) {
+        //         const pos = editorView.posAtCoords({ x: touch.clientX, y: touch.clientY });
+        //         if (pos && startPosition.current) {
+        //             editorView.dispatch({ selection: { anchor: startPosition.current, head: pos } });
+        //         } else if (pos) {
+        //             editorView.dispatch({ selection: { anchor: pos, head: pos } });
+        //             startPosition.current = pos || 0;
+        //         }
+        //     }
+        //     return;
+        // }
 
-        useEffect(() => {
-            let timeoutId: any;
-            if (selectionRange) {
-                const view = codeMirrorRef.current?.view;
-                const coords = view?.coordsAtPos(selectionRange.anchor);
-                if (coords) {
-                    setMenuPosition({ top: coords.top + 20, left: coords.left });
-                    timeoutId = setTimeout(() => {
-                        setSelectionRange(null);
-                        view?.dispatch({ selection: { anchor: selectionRange.anchor, head: selectionRange.anchor } });
-                    }, 2000);
-                }
-            }
-            return () => clearTimeout(timeoutId);
-        }, [selectionRange]);
+        // useEffect(() => {
+        //     let timeoutId: any;
+        //     if (selectionRange) {
+        //         const view = codeMirrorRef.current?.view;
+        //         const coords = view?.coordsAtPos(selectionRange.anchor);
+        //         if (coords) {
+        //             setMenuPosition({ top: coords.top + 20, left: coords.left });
+        //             timeoutId = setTimeout(() => {
+        //                 setSelectionRange(null);
+        //                 view?.dispatch({ selection: { anchor: selectionRange.anchor, head: selectionRange.anchor } });
+        //             }, 2000);
+        //         }
+        //     }
+        //     return () => clearTimeout(timeoutId);
+        // }, [selectionRange]);
 
         const handleCopy = () => {
             const view = codeMirrorRef.current?.view;
@@ -470,17 +471,17 @@ export class CodeEditorShapeUtil extends BaseBoxShapeUtil<CodeEditorShape> {
             }
         };
 
-        const handleTouchEnd = (e: React.TouchEvent<HTMLDivElement>) => {
-            const view = codeMirrorRef.current?.view;
-            if (view) {
-                const selection = view.state.selection.main;
-                if (selection.from !== selection.to) {
-                    setSelectionRange({ anchor: selection.from, head: selection.to });
-                }
-            }
-            startPosition.current = null;
-            e.stopPropagation();
-        };
+        // const handleTouchEnd = (e: React.TouchEvent<HTMLDivElement>) => {
+        //     const view = codeMirrorRef.current?.view;
+        //     if (view) {
+        //         const selection = view.state.selection.main;
+        //         if (selection.from !== selection.to) {
+        //             setSelectionRange({ anchor: selection.from, head: selection.to });
+        //         }
+        //     }
+        //     startPosition.current = null;
+        //     e.stopPropagation();
+        // };
 
         const handleDoubleClick = (e: React.MouseEvent<HTMLDivElement>) => {
             e.preventDefault();
@@ -490,77 +491,71 @@ export class CodeEditorShapeUtil extends BaseBoxShapeUtil<CodeEditorShape> {
 
         return (
             <div
-                onTouchStart={handleTouchStart}
-                onTouchMove={handleTouchMove}
-                onTouchEnd={handleTouchEnd}
+                id={`editor-${shape.id}`}
                 onDoubleClick={handleDoubleClick}
                 style={{
                     touchAction: isTouchDevice ? 'auto' : 'none',
                     pointerEvents: isEditing ? 'auto' : 'none',
-                    gridTemplateColumns: '1fr 1fr',
                     alignItems: 'center',
                     position: 'relative',
-                    minHeight: `${shape.props.h}px`
+                    width: `${shape.props.w}px`,
+                    height: `${shape.props.h}px`,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    overflow: 'hidden'
                 }}
             >
                 <div
-                    style={{ position: 'relative', zIndex: 1 }}
+                    style={{ 
+                        position: 'relative', 
+                        zIndex: 1, 
+                        width: '100%',
+                        height: '60%'
+                    }}
                 >
                     <CodeMirror
-                        id={`editor-${shape.id}`}
                         ref={codeMirrorRef}
                         value={shape.props.code}
                         style={{
-                            fontSize: '22px',
+                            fontSize: '16px',
                             border: '1px solid var(--color-panel-contrast)',
                             borderRadius: 'var(--radius-2)',
                             backgroundColor: 'var(--color-background)',
                             width: `${shape.props.w}px`,
-                            height: `${shape.props.h + 10}px`
+                            height: '100%'
                         }}
-                        // onCreateEditor?(view: EditorView, state: EditorState): void;
-                        // onCreateEditor={(view: EditorView, state: EditorState) => {
-                        //     handleEditorCreation(view, state, shape);
-                        // }}
                         extensions={[...extensions, interpretationGutter]}
-                        height={`${shape.props.h}px`}
+                        height="100%"
                         editable={true}
-                    // onChange={(value) => {
-                    //     this.editor.updateShape<CodeEditorShape>({
-                    //         id: shape.id,
-                    //         type: 'code-editor-shape',
-                    //         props: {
-                    //             ...shape.props,
-                    //             code: value
-                    //         }
-                    //     })
-                    // }}
                     />
                 </div>
-                {(
-                    <div id="result-view" style={{
+                <div id="result-view" style={{
+                    width: '100%',
+                    height: '40%',
+                    minHeight: '100px',
+                    overflow: 'auto',
+                    borderTop: '5px solid #ccc',
+                    fontFamily: '"Fira Code", "Consolas", "Monaco", monospace',
+                    backgroundColor: 'rgb(248 248 248)',
+                    color: '#000',
+                    padding: '20px',
+                    boxSizing: 'border-box',
+                    zIndex: 10,
+                    whiteSpace: 'pre-wrap',
+                    position: 'relative'
+                }}
+                    contentEditable={false}
+                    tabIndex={-1}
+                    onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); return; }}
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); return; }}
+                    onTouchStart={(e) => { e.preventDefault(); e.stopPropagation(); return; }}
+                >
+                    <div style={{ 
                         width: '100%',
-                        minHeight: '20vh',
-                        maxHeight: '60vh',
-                        overflow: 'auto',
-                        borderTop: '5px solid #ccc',
-                        fontFamily: '"Fira Code", "Consolas", "Monaco", monospace',
-                        backgroundColor: 'rgb(248 248 248)',
-                        color: '#000',
-                        padding: '20px',
-                        boxSizing: 'border-box',
-                        zIndex: 10,
-                        whiteSpace: 'pre-wrap'
-                    }}
-                        contentEditable={false}
-                        tabIndex={-1}
-                        onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); return; }}
-                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); return; }}
-                        onTouchStart={(e) => { e.preventDefault(); e.stopPropagation(); return; }}
-                    >
-                        <div dangerouslySetInnerHTML={{ __html: shape.props.res }}></div>
-                    </div>
-                )}
+                        height: '100%',
+                        overflow: 'visible'
+                    }} dangerouslySetInnerHTML={{ __html: shape.props.res }}></div>
+                </div>
                 {selectionRange && menuPosition && (
                     <BubbleMenu
                         onCopy={handleCopy}
@@ -574,24 +569,74 @@ export class CodeEditorShapeUtil extends BaseBoxShapeUtil<CodeEditorShape> {
     }
 
     override async toSvg(shape: CodeEditorShape, _ctx: SvgExportContext): Promise<React.ReactElement | null> {
-        const screenShot = await html2canvas(document.getElementById(`editor-${shape.id}`) as HTMLElement, { useCORS: true }).then(function (canvas) {
-            const data = canvas.toDataURL('image/png');
-            return data;
+        const element = document.getElementById(`editor-${shape.id}`) as HTMLElement;
+        if (!element) return null;
+
+        // Wait for any pending renders to complete
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        // Find the size of the entire element including any overflow content
+        const computedStyle = window.getComputedStyle(element);
+        const resultView = element.querySelector('#result-view') as HTMLElement;
+        const codeEditor = element.querySelector('.cm-editor') as HTMLElement;
+        
+        // Make sure the cloned element captures everything
+        const screenShot = await html2canvas(element, {
+            useCORS: true,
+            scale: 2,
+            logging: false,
+            backgroundColor: null,
+            allowTaint: true,
+            windowWidth: shape.props.w,
+            windowHeight: shape.props.h,
+            scrollX: 0,
+            scrollY: 0,
+            width: shape.props.w,
+            height: shape.props.h,
+            ignoreElements: (el) => false, // Don't ignore any elements
+            onclone: (clonedDoc) => {
+                const clonedElement = clonedDoc.getElementById(`editor-${shape.id}`);
+                if (clonedElement) {
+                    // Make sure dimensions are set correctly
+                    clonedElement.style.width = `${shape.props.w}px`;
+                    clonedElement.style.height = `${shape.props.h}px`;
+                    
+                    // Fix code editor visibility
+                    const clonedEditor = clonedElement.querySelector('.cm-editor');
+                    if (clonedEditor) {
+                        (clonedEditor as HTMLElement).style.height = '100%';
+                        (clonedEditor as HTMLElement).style.visibility = 'visible';
+                        (clonedEditor as HTMLElement).style.display = 'block';
+                    }
+                    
+                    // Fix result view visibility and ensure overflow content is visible
+                    const clonedResultView = clonedElement.querySelector('#result-view');
+                    if (clonedResultView) {
+                        (clonedResultView as HTMLElement).style.height = '40%';
+                        (clonedResultView as HTMLElement).style.visibility = 'visible';
+                        (clonedResultView as HTMLElement).style.display = 'block';
+                        
+                        // Make sure charts/visualization are visible
+                        const resultContent = clonedResultView.querySelector('div');
+                        if (resultContent) {
+                            (resultContent as HTMLElement).style.position = 'relative';
+                            (resultContent as HTMLElement).style.visibility = 'visible';
+                            (resultContent as HTMLElement).style.overflow = 'visible';
+                        }
+                    }
+                }
+            }
+        }).then(function (canvas) {
+            return canvas.toDataURL('image/png', 1.0);
         });
 
         return (
             <svg width={shape.props.w} height={shape.props.h} xmlns="http://www.w3.org/2000/svg">
-                <filter id="grayscale-filter">
-                    <feColorMatrix
-                        type="matrix"
-                        values="0.33 0.33 0.33 0 0 0.33 0.33 0.33 0 0 0.33 0.33 0.33 0 0 0 0 0 1 0"
-                    />
-                </filter>
                 <image
                     href={screenShot}
                     width={shape.props.w}
                     height={shape.props.h}
-                    filter="url(#grayscale-filter)"
+                    preserveAspectRatio="none"
                 />
             </svg>
         );
