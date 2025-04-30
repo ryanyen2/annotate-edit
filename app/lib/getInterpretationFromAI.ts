@@ -41,6 +41,25 @@ export async function getInterpretationFromAI({
         text: OPENAI_USER_INTERPRETATION_SKETCH_PROMPT,
     })
 
+    userContent.push({
+        type: 'text',
+        text: `If users circled some words from the output area (below the code editor) and crossed out, it means user want to bypass those words (e.g., "used", "provide", "increasingly") when preprocessing the text, add a line of code to exclude "used" and "provide" from the text.
+        For example, if user circled "used", "increasingly" and "provide" and crossed out, and already have a list of words, you should add:
+        filtered_words = ["used", "provide", "increasingly"]
+        words = [word for word in words if word not in filtered_words]
+        `,
+    })
+
+    userContent.push({
+        type: 'text',
+        text: `If users asekd to extract countries out from the data, and draw a visualization about barchart showing the top countries of award winning, user might want to first get the countries data and then use it the plot a vertical barchart`
+    })
+
+    userContent.push({
+        type: 'text',
+        text: `If user add a legned name award type beside the visualization of top 20 award winning country, please then edits the code to create pivot table then plot the stacked bar chart`
+    })
+
     // Add the image
     userContent.push({
         type: 'image_url',

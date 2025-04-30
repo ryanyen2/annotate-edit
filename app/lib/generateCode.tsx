@@ -66,7 +66,7 @@ export async function generateCode(
 		scale: 1,
 	})
 	const dataUrl = await blobToBase64(blob!)
-	downloadDataURLAsFile(dataUrl, 'tldraw.png')
+	// downloadDataURLAsFile(dataUrl, 'tldraw.png')
 
 	onStoreLog({ type: 'generate-param', data: dataUrl })
 

@@ -57,6 +57,13 @@ from matplotlib import pyplot as plt
 import io
 import base64
 import js
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+import numpy as np
+from collections import Counter
+import re
+import ast
 
 
 class Dud:
@@ -324,7 +331,7 @@ ${currentCode}
     // Process the output
     const images = stdout.match(/data:image\/jpg;base64,[^"]+/g) || [];
     let nonImageContent = stdout;
-    const imageHtml = images.map(image => `<img src="${image}" alt="image" width="600">`).join('');
+    const imageHtml = images.map(image => `<img src="${image}" alt="image" width="400">`).join('');
     images.forEach(image => {
         nonImageContent = nonImageContent.replace(image, '');
     });

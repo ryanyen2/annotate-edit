@@ -258,22 +258,43 @@ print(processed_df)`,
         id: '4-1',
         title: 'CHI Paper Abstract Analysis',
         description: 'Create a visualization of CHI 2025 papers data',
-        starterCode: `import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
-import numpy as np
-from collections import Counter
-import re
+        starterCode: `def extract_countries(authors_str):
+    try:
+        authors = ast.literal_eval(authors_str)
+        countries = set()
+        for author in authors:
+            for aff in author.get('affiliations', []):
+                country = aff.get('country')
+                if country:
+                    countries.add(country)
+        return list(countries)
+    except (ValueError, SyntaxError):
+        return []
 
-# df is CHI_2025_program.json (pre-loaded)
-print(df.head())
 
-plt.figure(figsize=(10, 6))
-sns.countplot(data=df, x='award', palette='viridis')
-plt.title('Papers by Award Status')
-plt.xlabel('Award')
-plt.ylabel('Count')
-plt.xticks(rotation=45)
+df_expanded = df.copy()
+df_expanded['Country'] = df_expanded['authors'].apply(extract_countries)
+df_expanded = df_expanded.explode('Country').dropna(subset=['Country'])
+
+country_counts = (
+    df_expanded
+      .groupby('Country')
+      .size()
+      .reset_index(name='Count')
+      .sort_values('Count', ascending=False)
+      .head(10)
+)
+
+plt.figure(figsize=(12, 10))
+sns.barplot(
+    data=country_counts,
+    y='Country',
+    x='Count',
+    palette='viridis'
+)
+plt.title('Top 10 Countries by Award-Winning Papers')
+plt.xlabel('Number of Papers')
+plt.ylabel('Country')
 plt.tight_layout()
 plt.show()`,
     },
@@ -281,41 +302,19 @@ plt.show()`,
         id: '4-2',
         title: 'Advanced CHI Paper Analysis Dashboard',
         description: 'Enhance the visualization to analyze trends and patterns in CHI 2025 papers',
-        starterCode: `import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
-import numpy as np
-from collections import Counter
-import re
-
-# df is CHI_2025_program.json (pre-loaded)
-# print(df.head())
-
+        starterCode: `print(df['authors'].iloc[0])
 
 def process_text(text):
-    stopwords = ['and', 'the', 'to', 'of', 'in', 'a', 'is', 'that', 'for', 'on', 'with', 'as', 'by', 'this', 'we', 'are', 'from']
+    stopwords = ['and', 'the', 'to', 'of', 'in', 'a', 'is', 'that', 'for', 'on', 'with', 'as', 'by', 'this', 'we', 'are', 'from', 'However', ''However,']
     words = [word for word in text.split(" ") if word not in stopwords and len(word) > 1]
-    
     return words
-
-countries = []
-for authors_list in df['authors']:
-    for author in authors_list:
-        if 'affiliations' in author and len(author['affiliations']) > 0:
-            if 'country' in author['affiliations'][0]:
-                countries.append(author['affiliations'][0]['country'])
-
-
-track_counts = df['trackId'].value_counts().reset_index()
-track_counts.columns = ['Track ID', 'Count']
-plt.figure(figsize=(16, 12))
-
-
+    
 all_words = []
 for abstract in df['abstract']:
     all_words.extend(process_text(abstract))
 print(all_words[:10])
 
+plt.figure(figsize=(16, 12))
 word_counts = Counter(all_words).most_common(10)
 word_df = pd.DataFrame(word_counts, columns=['Word', 'Count'])
 sns.barplot(data=word_df, x='Word', y='Count', palette='mako')
