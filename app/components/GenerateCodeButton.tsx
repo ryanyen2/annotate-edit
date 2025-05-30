@@ -34,9 +34,9 @@ export function GenerateCodeButton({ interpretation, editor, codeShapeId, onStor
 
 	const handleClick = useCallback(async () => {
 		try {
-			// const input = document.getElementById('openai_key_risky_but_cool') as HTMLInputElement
-			// const apiKey = input?.value ?? null
-			const apiKey = process.env.NEXT_PUBLIC_OPENAI_API_KEY
+			// First try to get API key from localStorage (user input), then fall back to environment variable
+			const userApiKey = localStorage.getItem('makeitreal_key')
+			const apiKey = userApiKey || process.env.NEXT_PUBLIC_OPENAI_API_KEY
 			if (!apiKey) throw Error('Make sure the input includes your API Key!')
 
 			const onStart = () => setIsGenerating(true);

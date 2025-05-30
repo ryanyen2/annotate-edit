@@ -3,6 +3,7 @@
 import dynamic from 'next/dynamic'
 import '@tldraw/tldraw/tldraw.css'
 import { ShareButtonGroup } from './components/ShareButtonGroup'
+import { RiskyButCoolAPIKeyInput } from './components/RiskyButCoolAPIKeyInput'
 
 import { PreviewShapeUtil } from './PreviewShape/PreviewShape'
 import { CodeEditorShapeUtil } from './CodeEditorShape/CodeEditorShape'
@@ -20,7 +21,7 @@ import {
 // import { useEditor } from 'tldraw'
 import { CodeEditorShape } from './CodeEditorShape/CodeEditorShape'
 import { userStudyTasks, type Task } from './lib/tasks'
-import { addCollection } from './lib/firebase'
+// import { addCollection } from './lib/firebase'
 import { interpretShapes, InterpretationResult } from './lib/interpretShapes'
 import { generateCode } from './lib/generateCode'
 
@@ -198,7 +199,7 @@ function InsideOfContext({
 
 		const handlePanning = (event: TouchEvent) => {
 			event.stopPropagation();
-			event.preventDefault();
+			// event.preventDefault();
 			onMultiTouchStart(event.touches.length)
 			if (event.target && (event.target as HTMLElement).className === 'cm-line') {
 				event.stopPropagation();
@@ -327,7 +328,7 @@ function InsideOfContext({
 				},
 			})
 		}
-	}, [currentTask])
+	}, [currentTask, editor, newShapeId])
 
 	return null
 }
@@ -752,7 +753,9 @@ export default function App() {
 						} else {
 							// If not recognized as check or x, set up interpretation timer
 							interpretationDebounceTimer.current = setTimeout(async () => {
-								const apiKey = process.env.NEXT_PUBLIC_OPENAI_API_KEY;
+								// First try to get API key from localStorage (user input), then fall back to environment variable
+								const userApiKey = localStorage.getItem('makeitreal_key')
+								const apiKey = userApiKey || process.env.NEXT_PUBLIC_OPENAI_API_KEY;
 								if (!apiKey) throw Error('Make sure the input includes your API Key!');
 								setIsInterpreting(true);
 								try {
@@ -774,9 +777,9 @@ export default function App() {
 								} finally {
 									setIsInterpreting(false);
 								}
-							}, 1200); // 1200ms debounce for interpretation
+							}, 1500); // 1500ms debounce for interpretation
 						}
-					}, 100); // 100ms debounce for recognition
+					}, 200); // 100ms debounce for recognition
 				}
 				lastEventType.current = null;
 			}
@@ -803,7 +806,7 @@ export default function App() {
 		// 	}
 		// }
 		userId.current = 'anonymous';
-		taskId.current = '3-1';
+		taskId.current = '4-2';
 		handleTaskChange(userStudyTasks.find(task => task.id === taskId.current) as Task);
 
 		window.oncontextmenu = function (event) {
@@ -849,13 +852,13 @@ export default function App() {
 		const logEvent: LogEvent = {
 			type: log.type,
 			userId: userId.current || 'anonymous',
-			taskId: taskId.current || '10',
+			taskId: taskId.current || '3-1',
 			data: log.data || null,
 			timestamp: Date.now(),
 		};
 		return;
 
-		await addCollection(`${userId.current}_${taskId.current}`, logEvent);
+		// await addCollection(`${userId.current}_${taskId.current}`, logEvent);
 	};
 
 	const handleSelectBrush = (brush: ControlBrusheType) => {
@@ -908,7 +911,7 @@ export default function App() {
 				h: (window.innerHeight) * 2,
 			},
 		})
-		// handleTaskChange(task);
+		handleTaskChange(task);
 	}
 
 	// const getNewShapeId = useCallback(() => newShapeId.current, []);
@@ -989,6 +992,7 @@ export default function App() {
 						<GenerateCodeButton interpretation={interpretationResult ? interpretationResult.action : ''} editor={editorRef.current as Editor} codeShapeId={newShapeId.current} onStoreLog={handleStoreLog} />
 						<ExecuteCodeButton editor={editorRef.current as Editor} codeShapeId={currentCodeShapeId!} onStoreLog={handleStoreLog} />
 					</div>
+					<RiskyButCoolAPIKeyInput />
 					{/* <LockCodeEditorButton codeShapeId={newShapeId} onStoreLog={handleStoreLog} /> */}
 				</Tldraw>
 			</div>

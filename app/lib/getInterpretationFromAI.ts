@@ -41,6 +41,7 @@ export async function getInterpretationFromAI({
         text: OPENAI_USER_INTERPRETATION_SKETCH_PROMPT,
     })
 
+    
     // Add the image
     userContent.push({
         type: 'image_url',

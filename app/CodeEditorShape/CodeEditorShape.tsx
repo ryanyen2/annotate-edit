@@ -511,7 +511,7 @@ export class CodeEditorShapeUtil extends BaseBoxShapeUtil<CodeEditorShape> {
                         ref={codeMirrorRef}
                         value={shape.props.code}
                         style={{
-                            fontSize: '22px',
+                            fontSize: '19px',
                             border: '1px solid var(--color-panel-contrast)',
                             borderRadius: 'var(--radius-2)',
                             backgroundColor: 'var(--color-background)',

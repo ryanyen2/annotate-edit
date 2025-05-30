@@ -274,11 +274,11 @@
 
 .your-own-api-key {
 	position: absolute;
-	bottom: 72px;
-	right: 0px;
-	width: 100%;
-	display: flex;
-	flex-direction: column;
+	top: 10px;
+	right: 10px;
+	/* width: 100%; */
+	/* display: flex;
+	flex-direction: column; */
 	align-items: center;
 	justify-content: center;
 	z-index: 9999999;
@@ -328,7 +328,7 @@
 }
 
 .input__wrapper:not(:focus-within)::after {
-	content: 'Your OpenAI API Key (risky but cool)';
+	content: 'Your OpenAI API Key';
 	display: block;
 	position: absolute;
 	inset: 0px;
@@ -338,7 +338,7 @@
 	padding: 0px 12px;
 	z-index: 999999999;
 	background-color: none;
-	font-size: 12px;
+	font-size: 10px;
 	font-family: Inter, sans-serif;
 }
 
